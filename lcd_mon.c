@@ -135,8 +135,17 @@ main(int argc, char *argv[])
 	signal(SIGTERM, sigf);
 	signal(SIGHUP, SIG_IGN);
 
+	clear_lcd();
+	usleep(100000);
+
 	while (bail == 0) {
 	
+		write(fd, "Hello", 5);
+		usleep(100000);
+		line_two(fd);	
+		usleep(100000);
+		write(fd, "Line 2", 6);
+		sleep(1);
 	}
 
 	if(tcsetattr(fd, TCSANOW, &portsave) < 0)
