@@ -60,21 +60,42 @@ sigf(int useless)
 
 int clear_lcd(int fd)
 {
-		int fd;
+	int fd;
+
         write(fd, 0xFE, 1);
         write(fd, 0x01, 1);
+
+	return(0);
 }
 
-void set_backlight()
+int display_on(int fd)
 {
-        Serial.print(0x7C, BYTE);
-        Serial.print(157, BYTE);
+	int fd;
+
+        write(fd, 0xFE, 1);
+        write(fd, 0x0C, 1);
+
+	return(0);
 }
 
-void line_two()
+int set_backlight(int fd)
 {
-        Serial.print(0xFE, BYTE);
-        Serial.print(192, BYTE);
+	int fd;
+
+        write(fd, 0x7C, 1);
+        write(fd, 157, 1);
+
+	return(0);
+}
+
+int line_two(int fd)
+{
+	int fd;
+
+        write(fd, 0xFE, 1);
+        write(fd, 192, 1);
+
+	return(0);
 }
 
 
