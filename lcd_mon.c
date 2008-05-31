@@ -41,6 +41,8 @@ int		set_backlight(int);
 int		line_two(int);
 
 volatile sig_atomic_t bail = 0;
+char cmd0=(int)0xFE, cmd1=(int)0x7C, cmd_on=0x0C, cmd_clear=0x01;
+char cmd_bl=(int)157, cmd_l2=(int)192;
 
 __dead void
 usage(void)
@@ -60,40 +62,32 @@ sigf(int useless)
 
 int clear_lcd(int fd)
 {
-	int fd;
-
-        write(fd, 0xFE, 1);
-        write(fd, 0x01, 1);
+        write(fd, &cmd0, sizeof(cmd0));
+        write(fd, &cmd_clear, sizeof(cmd_clear));
 
 	return(0);
 }
 
 int display_on(int fd)
 {
-	int fd;
-
-        write(fd, 0xFE, 1);
-        write(fd, 0x0C, 1);
+        write(fd, &cmd0, sizeof(cmd0));
+        write(fd, &cmd_on, sizeof(cmd_on));
 
 	return(0);
 }
 
 int set_backlight(int fd)
 {
-	int fd;
-
-        write(fd, 0x7C, 1);
-        write(fd, 157, 1);
+        write(fd, &cmd1, sizeof(cmd1));
+        write(fd, &cmd_bl, sizeof(cmd_bl));
 
 	return(0);
 }
 
 int line_two(int fd)
 {
-	int fd;
-
-        write(fd, 0xFE, 1);
-        write(fd, 192, 1);
+        write(fd, &cmd0, sizeof(cmd0));
+        write(fd, &cmd_l2, sizeof(cmd_l2));
 
 	return(0);
 }
@@ -122,34 +116,45 @@ main(int argc, char *argv[])
 		dev = devicename;
 	}
 
-	if ((fd = open(dev, O_WR)) < 0)
+	printf("-4\n"); fflush(stdout);
+
+	if ((fd = open(dev, O_WRONLY)) < 0)
 		err(1, "open: %s", dev);
 
+	printf("-3\n"); fflush(stdout);
+
+/*
 	if (tcgetattr(fd, &portsave) < 0)
 		err(1, "tcgetattr");
 
 	if (cfsetspeed(&port, B9600) < 0)
 		err(1, "cfsetspeed");
+*/
+
+	printf("-2\n"); fflush(stdout);
 
 	signal(SIGINT, sigf);
 	signal(SIGTERM, sigf);
 	signal(SIGHUP, SIG_IGN);
 
-	clear_lcd();
+	printf("-1\n"); fflush(stdout);
+
+	clear_lcd(fd);
 	usleep(100000);
 
 	while (bail == 0) {
-	
-		write(fd, "Hello", 5);
+		printf("wee\n"); fflush(stdout);
+		write(fd, "Hello ", 6);
 		usleep(100000);
 		line_two(fd);	
 		usleep(100000);
-		write(fd, "Line 2", 6);
+		write(fd, "Line 2 ", 7);
 		sleep(1);
 	}
-
+/*
 	if(tcsetattr(fd, TCSANOW, &portsave) < 0)
 		err(1, "tcsetattr restore");
+*/
 
 	close(fd);
 	return(0);
