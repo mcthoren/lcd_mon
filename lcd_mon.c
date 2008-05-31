@@ -21,7 +21,10 @@
  * 
  */
 
+#define lcd_wait 100000
+
 #include <sys/ioctl.h>
+#include <sys/param.h>
 #include <sys/types.h>
 
 #include <err.h>
@@ -41,8 +44,8 @@ int		set_backlight(int);
 int		line_two(int);
 
 volatile sig_atomic_t bail = 0;
-char cmd0=(int)0xFE, cmd1=(int)0x7C, cmd_on=0x0C, cmd_clear=0x01;
-char cmd_bl=(int)157, cmd_l2=(int)192;
+char cmd_0 = (int)0xFE, cmd_1 = (int)0x7C, cmd_on = 0x0C, cmd_clear = 0x01;
+char cmd_bl = (int)157, cmd_l2 = (int)192;
 
 __dead void
 usage(void)
@@ -62,32 +65,36 @@ sigf(int useless)
 
 int clear_lcd(int fd)
 {
-        write(fd, &cmd0, sizeof(cmd0));
+        write(fd, &cmd_0, sizeof(cmd_0));
         write(fd, &cmd_clear, sizeof(cmd_clear));
+	usleep(lcd_wait);
 
 	return(0);
 }
 
 int display_on(int fd)
 {
-        write(fd, &cmd0, sizeof(cmd0));
+        write(fd, &cmd_0, sizeof(cmd_0));
         write(fd, &cmd_on, sizeof(cmd_on));
+	usleep(lcd_wait);
 
 	return(0);
 }
 
 int set_backlight(int fd)
 {
-        write(fd, &cmd1, sizeof(cmd1));
+        write(fd, &cmd_1, sizeof(cmd_1));
         write(fd, &cmd_bl, sizeof(cmd_bl));
+	usleep(lcd_wait);
 
 	return(0);
 }
 
 int line_two(int fd)
 {
-        write(fd, &cmd0, sizeof(cmd0));
+        write(fd, &cmd_0, sizeof(cmd_0));
         write(fd, &cmd_l2, sizeof(cmd_l2));
+	usleep(lcd_wait);
 
 	return(0);
 }
@@ -97,7 +104,7 @@ int
 main(int argc, char *argv[])
 {
 	int fd;
-	char *dev, devicename[32];
+	char *dev, devicename[32], *p, hostname[MAXHOSTNAMELEN];
 	struct termios port, portsave;
 
 	bzero(&port, sizeof(port));
@@ -139,16 +146,27 @@ main(int argc, char *argv[])
 
 	printf("-1\n"); fflush(stdout);
 
+	if (gethostname(hostname, sizeof(hostname)))
+		err(1, "gethostname");
+	if ((p = strchr(hostname, '.')))
+		*p = '\0';
+
+	set_backlight(fd);
 	clear_lcd(fd);
-	usleep(100000);
+	display_on(fd);
 
 	while (bail == 0) {
 		printf("wee\n"); fflush(stdout);
+		clear_lcd(fd);
 		write(fd, "Hello ", 6);
-		usleep(100000);
+		usleep(lcd_wait);
 		line_two(fd);	
-		usleep(100000);
 		write(fd, "Line 2 ", 7);
+		usleep(lcd_wait);
+		sleep(1);
+
+		clear_lcd(fd);
+		write(fd, &hostname, p - hostname);
 		sleep(1);
 	}
 /*
