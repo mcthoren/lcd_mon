@@ -36,6 +36,9 @@
 
 __dead void	usage(void);
 void		sigf(int);
+int		clear_lcd(int);
+int		set_backlight(int);
+int		line_two(int);
 
 volatile sig_atomic_t bail = 0;
 
@@ -54,6 +57,26 @@ sigf(int useless)
 {
 	bail = 1;
 }
+
+int clear_lcd(int fd)
+{
+		int fd;
+        write(fd, 0xFE, 1);
+        write(fd, 0x01, 1);
+}
+
+void set_backlight()
+{
+        Serial.print(0x7C, BYTE);
+        Serial.print(157, BYTE);
+}
+
+void line_two()
+{
+        Serial.print(0xFE, BYTE);
+        Serial.print(192, BYTE);
+}
+
 
 int
 main(int argc, char *argv[])
