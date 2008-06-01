@@ -18,8 +18,12 @@
 
 /*
  * Much of this code is from OpenBSD programs and manpages. 
+ * No really, like most of it is just copy paste from /usr/src/
  *
- * This code depends on DTR being looped to DCD.
+ * XXX This code depends on DTR being looped to DCD, cuz I haven't setup
+ * the serial port corectly yet :x 
+ *
+ * XXX I'm not saving or restoring port settings yet either :x
  * 
  */
 
@@ -27,6 +31,7 @@
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
+#include <sys/sysctl.h>
 #include <sys/types.h>
 
 #include <err.h>
@@ -37,6 +42,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <termios.h>
+#include <tzfile.h>
 #include <unistd.h>
 
 __dead void	usage(void);
@@ -48,6 +54,7 @@ int		line_two(int);
 volatile sig_atomic_t bail = 0;
 char cmd_0 = (int)0xFE, cmd_1 = (int)0x7C, cmd_on = 0x0C, cmd_clear = 0x01;
 char cmd_bl = (int)157, cmd_l2 = (int)192;
+int wait=3;
 
 __dead void
 usage(void)
@@ -101,19 +108,96 @@ int line_two(int fd)
 	return(0);
 }
 
+int write_hostname(fd)
+{
+
+	char *p, hostname[MAXHOSTNAMELEN];
+
+	if (gethostname(hostname, sizeof(hostname)))
+		err(1, "gethostname");
+	if ((p = strchr(hostname, '.')))
+		*p = '\0';
+
+	clear_lcd(fd);
+	write(fd, &hostname, p - hostname);
+
+	return(0);
+}
+
+int write_time(fd)
+{
+
+	char *format, buf[1024];
+	time_t tval;
+
+	format = "%H:%M:%S %Z";
+/*	bzero(buf, sizeof(buf));*/
+
+	if (time(&tval) == -1) err(1, "time");
+	(void)strftime(buf, sizeof(buf), format, gmtime(&tval));
+	write(fd, buf, 12);
+
+	return(0);
+}
+
+int write_load(fd)
+{
+	double loadav[3];
+	char load[17];
+
+	load[16] = (int) 0x20;
+	load[15] = (int) 0x20;
+
+	if (getloadavg(loadav, sizeof(loadav) / sizeof(loadav[0])) < 0)
+		err(1, "getloadavg");
+
+	snprintf(load, 17, "%.2f %.2f %.2f", loadav[0], loadav[1], loadav[2]);
+	write(fd, load, 14);
+	
+	return(0);
+}
+
+int write_uptime(fd)
+{
+	int mib[2];
+	char wtime[16];
+	time_t uptime, now;
+	int days, hrs, mins;
+	struct timeval  boottime;
+	size_t size;
+
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_BOOTTIME;
+	size = sizeof(boottime);
+	if (sysctl(mib, 2, &boottime, &size, NULL, 0) < 0)
+		err(1, "sysctl");
+
+	(void)time(&now);
+	uptime = now - boottime.tv_sec;
+
+	days = uptime / SECSPERDAY;
+	uptime %= SECSPERDAY;
+	hrs = uptime / SECSPERHOUR;
+	uptime %= SECSPERHOUR;
+	mins = uptime / SECSPERMIN;
+	uptime %= SECSPERMIN;
+
+	snprintf(wtime, 14, "%03dd%02dh%02dm%02ds",days, hrs, mins, uptime);
+	write(fd, wtime, 13);
+
+	return(0);
+}
+
 
 int
 main(int argc, char *argv[])
 {
 	int fd;
-	char *dev, devicename[32], *p, hostname[MAXHOSTNAMELEN];
-	char *format, buf[1024];
-	time_t tval;
-	struct termios port, portsave;
+	char *dev, devicename[32];
+	struct termios port;
+/*	struct termios portsave; */
 
-	format = "%H:%M:%S %Z";
 	bzero(&port, sizeof(port));
-	bzero(buf, sizeof(buf));
 
 	argc -= optind;
 	argv += optind;
@@ -129,8 +213,6 @@ main(int argc, char *argv[])
 		dev = devicename;
 	}
 
-	printf("-4\n"); fflush(stdout);
-
 	if ((fd = open(dev, O_WRONLY)) < 0)
 		err(1, "open: %s", dev);
 
@@ -144,7 +226,6 @@ main(int argc, char *argv[])
 		err(1, "cfsetspeed");
 */
 
-	printf("-2\n"); fflush(stdout);
 
 	signal(SIGINT, sigf);
 	signal(SIGTERM, sigf);
@@ -152,35 +233,37 @@ main(int argc, char *argv[])
 
 	printf("-1\n"); fflush(stdout);
 
-	if (gethostname(hostname, sizeof(hostname)))
-		err(1, "gethostname");
-	if ((p = strchr(hostname, '.')))
-		*p = '\0';
-
 	set_backlight(fd);
 	clear_lcd(fd);
 	display_on(fd);
 
 	while (bail == 0) {
-		//printf("wee\n"); fflush(stdout);
 		clear_lcd(fd);
-		write(fd, "Hello ", 6);
-		usleep(lcd_wait);
-		line_two(fd);	
-		write(fd, "Line 2 ", 7);
-		usleep(lcd_wait);
-		sleep(2);
-
-		clear_lcd(fd);
-		write(fd, &hostname, p - hostname);
+		write_hostname(fd);
 		write(fd, " Time:", 6);
 		line_two(fd);	
+		write_time(fd);
 
-		if (time(&tval) == -1) err(1, "time");
-		(void)strftime(buf, sizeof(buf), format, gmtime(&tval));
-		write(fd, buf, 12);
-		
-		sleep(2);
+		if(bail) break;
+		sleep(wait);
+
+		clear_lcd(fd);
+		write_hostname(fd);
+		write(fd, " Uptime:", 8);
+		line_two(fd);	
+		write_uptime(fd);
+
+		if(bail) break;
+		sleep(wait);
+
+		clear_lcd(fd);
+		write_hostname(fd);
+		write(fd, " Load:", 6);
+		line_two(fd);	
+		write_load(fd);
+
+		if(bail) break;
+		sleep(wait);
 	}
 /*
 	if(tcsetattr(fd, TCSANOW, &portsave) < 0)
