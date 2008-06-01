@@ -18,6 +18,8 @@
 
 /*
  * Much of this code is from OpenBSD programs and manpages. 
+ *
+ * This code depends on DTR being looped to DCD.
  * 
  */
 
@@ -105,9 +107,13 @@ main(int argc, char *argv[])
 {
 	int fd;
 	char *dev, devicename[32], *p, hostname[MAXHOSTNAMELEN];
+	char *format, buf[1024];
+	time_t tval;
 	struct termios port, portsave;
 
+	format = "%H:%M:%S %Z";
 	bzero(&port, sizeof(port));
+	bzero(buf, sizeof(buf));
 
 	argc -= optind;
 	argv += optind;
@@ -156,18 +162,25 @@ main(int argc, char *argv[])
 	display_on(fd);
 
 	while (bail == 0) {
-		printf("wee\n"); fflush(stdout);
+		//printf("wee\n"); fflush(stdout);
 		clear_lcd(fd);
 		write(fd, "Hello ", 6);
 		usleep(lcd_wait);
 		line_two(fd);	
 		write(fd, "Line 2 ", 7);
 		usleep(lcd_wait);
-		sleep(1);
+		sleep(2);
 
 		clear_lcd(fd);
 		write(fd, &hostname, p - hostname);
-		sleep(1);
+		write(fd, " Time:", 6);
+		line_two(fd);	
+
+		if (time(&tval) == -1) err(1, "time");
+		(void)strftime(buf, sizeof(buf), format, gmtime(&tval));
+		write(fd, buf, 12);
+		
+		sleep(2);
 	}
 /*
 	if(tcsetattr(fd, TCSANOW, &portsave) < 0)
