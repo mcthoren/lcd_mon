@@ -193,20 +193,29 @@ int write_uptime(fd)
 	return(0);
 }
 
-/*
 int write_temp(fd)
 {
-	int mib[2];
+	int mib[5];
+	size_t size;
+	char wtemp[11];
+	struct sensor	sensor;
 
 	mib[0] = CTL_HW;
 	mib[1] = HW_SENSORS;
-	size = sizeof(boottime);
-	if (sysctl(mib, 2, &boottime, &size, NULL, 0) < 0)
+	mib[2] = 0;
+	mib[3] = 0;
+	mib[4] = 1;
+	size = sizeof(sensor);
+	if (sysctl(mib, 5, &sensor, &size, NULL, 0) < 0)
 		err(1, "sysctl");
+
+	snprintf(wtemp, 11, "%02.2f degC", 
+		(sensor.value - 273150000) / 1000000.0);
+
+	write(fd, wtemp, 10);
 
 	return(0);
 }
-*/
 
 
 int
@@ -275,6 +284,20 @@ main(int argc, char *argv[])
 		write(fd, " Load:", 6);
 		line_two(fd);	
 		write_load(fd);
+
+		if(bail) break;
+		sleep(wait);
+
+		clear_lcd(fd);
+		write_hostname(fd);
+		write(fd, " Temp:", 6);
+		line_two(fd);	
+		write_temp(fd);
+
+/*
+		write(fd, "7th Angel cries:", 16);
+		write(fd, "   It is done!  ", 16);
+*/
 
 		if(bail) break;
 		sleep(wait);
