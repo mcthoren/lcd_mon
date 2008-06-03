@@ -31,6 +31,8 @@
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
+#include <sys/sensors.h>
+#include <sys/sysctl.h>
 #include <sys/sysctl.h>
 #include <sys/types.h>
 
@@ -134,7 +136,7 @@ int write_time(fd)
 /*	bzero(buf, sizeof(buf));*/
 
 	if (time(&tval) == -1) err(1, "time");
-	(void)strftime(buf, sizeof(buf), format, gmtime(&tval));
+	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
 	write(fd, buf, 12);
 
 	return(0);
@@ -143,7 +145,7 @@ int write_time(fd)
 int write_load(fd)
 {
 	double loadav[3];
-	char load[17];
+	char *p, load[17];
 
 	load[16] = (int) 0x20;
 	load[15] = (int) 0x20;
@@ -152,7 +154,10 @@ int write_load(fd)
 		err(1, "getloadavg");
 
 	snprintf(load, 17, "%.2f %.2f %.2f", loadav[0], loadav[1], loadav[2]);
-	write(fd, load, 14);
+	if ((p = strchr(load, '\0')))
+		*p = ' ';
+
+	write(fd, load, 16);
 	
 	return(0);
 }
@@ -160,7 +165,7 @@ int write_load(fd)
 int write_uptime(fd)
 {
 	int mib[2];
-	char wtime[16];
+	char wtime[17];
 	time_t uptime, now;
 	int days, hrs, mins;
 	struct timeval  boottime;
@@ -182,11 +187,26 @@ int write_uptime(fd)
 	mins = uptime / SECSPERMIN;
 	uptime %= SECSPERMIN;
 
-	snprintf(wtime, 14, "%03dd%02dh%02dm%02ds",days, hrs, mins, uptime);
-	write(fd, wtime, 13);
+	snprintf(wtime, 17, "%03dd %02dh %02dm %02ds",days, hrs, mins, uptime);
+	write(fd, wtime, 16);
 
 	return(0);
 }
+
+/*
+int write_temp(fd)
+{
+	int mib[2];
+
+	mib[0] = CTL_HW;
+	mib[1] = HW_SENSORS;
+	size = sizeof(boottime);
+	if (sysctl(mib, 2, &boottime, &size, NULL, 0) < 0)
+		err(1, "sysctl");
+
+	return(0);
+}
+*/
 
 
 int
@@ -205,7 +225,6 @@ main(int argc, char *argv[])
 	if (argc != 1)
 		usage();
 
-
 	dev = *argv;
 	if (strncmp(_PATH_DEV, dev, sizeof(_PATH_DEV) - 1)) {
 		(void)snprintf(devicename, sizeof(devicename),
@@ -216,8 +235,6 @@ main(int argc, char *argv[])
 	if ((fd = open(dev, O_WRONLY)) < 0)
 		err(1, "open: %s", dev);
 
-	printf("-3\n"); fflush(stdout);
-
 /*
 	if (tcgetattr(fd, &portsave) < 0)
 		err(1, "tcgetattr");
@@ -226,12 +243,9 @@ main(int argc, char *argv[])
 		err(1, "cfsetspeed");
 */
 
-
 	signal(SIGINT, sigf);
 	signal(SIGTERM, sigf);
 	signal(SIGHUP, SIG_IGN);
-
-	printf("-1\n"); fflush(stdout);
 
 	set_backlight(fd);
 	clear_lcd(fd);
