@@ -105,7 +105,7 @@ int line_two(int fd)
 {
         write(fd, &cmd_0, sizeof(cmd_0));
         write(fd, &cmd_l2, sizeof(cmd_l2));
-	usleep(lcd_wait);
+	/* usleep(lcd_wait); */
 
 	return(0);
 }
@@ -202,9 +202,10 @@ int write_temp(fd)
 
 	mib[0] = CTL_HW;
 	mib[1] = HW_SENSORS;
-	mib[2] = 0;
-	mib[3] = 0;
-	mib[4] = 1;
+	mib[2] = 0; /* 2,4 found by doing a ktrace of sysctl */
+	mib[3] = SENSOR_TEMP; 
+	mib[4] = 1; /* need to figure out how to do this properly */
+
 	size = sizeof(sensor);
 	if (sysctl(mib, 5, &sensor, &size, NULL, 0) < 0)
 		err(1, "sysctl");
@@ -227,6 +228,7 @@ main(int argc, char *argv[])
 /*	struct termios portsave; */
 
 	bzero(&port, sizeof(port));
+	srand(time(0));
 
 	argc -= optind;
 	argv += optind;
@@ -294,10 +296,12 @@ main(int argc, char *argv[])
 		line_two(fd);	
 		write_temp(fd);
 
-/*
-		write(fd, "7th Angel cries:", 16);
-		write(fd, "   It is done!  ", 16);
-*/
+		if(rand()%21==13){
+			sleep(wait);
+			clear_lcd(fd);
+			write(fd, "7th Angel cries:", 16);
+			write(fd, "   It is done!  ", 16);
+		}
 
 		if(bail) break;
 		sleep(wait);
