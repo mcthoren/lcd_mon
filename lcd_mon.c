@@ -105,7 +105,7 @@ int line_two(int fd)
 {
         write(fd, &cmd_0, sizeof(cmd_0));
         write(fd, &cmd_l2, sizeof(cmd_l2));
-	/* usleep(lcd_wait); */
+	usleep(lcd_wait);
 
 	return(0);
 }
@@ -117,8 +117,12 @@ int write_hostname(fd)
 
 	if (gethostname(hostname, sizeof(hostname)))
 		err(1, "gethostname");
+
 	if ((p = strchr(hostname, '.')))
 		*p = '\0';
+	else if ((p = strchr(hostname, '\0')))
+		*p = '\0';
+	else err(1, "can't figure out hostname");
 
 	clear_lcd(fd);
 	write(fd, &hostname, p - hostname);
@@ -138,6 +142,22 @@ int write_time(fd)
 	if (time(&tval) == -1) err(1, "time");
 	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
 	write(fd, buf, 12);
+
+	return(0);
+}
+
+int write_date(fd)
+{
+
+	char *format, buf[1024];
+	time_t tval;
+
+	format = "%a %b %e %Y";
+/*	bzero(buf, sizeof(buf));*/
+
+	if (time(&tval) == -1) err(1, "time");
+	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
+	write(fd, buf, 15);
 
 	return(0);
 }
@@ -268,6 +288,15 @@ main(int argc, char *argv[])
 		write(fd, " Time:", 6);
 		line_two(fd);	
 		write_time(fd);
+
+		if(bail) break;
+		sleep(wait);
+
+		clear_lcd(fd);
+		write_hostname(fd);
+		write(fd, " Date:", 6);
+		line_two(fd);	
+		write_date(fd);
 
 		if(bail) break;
 		sleep(wait);
