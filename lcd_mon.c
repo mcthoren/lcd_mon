@@ -27,7 +27,8 @@
  * 
  */
 
-#define lcd_wait 100000
+#define lcd_wait	100000
+#define	WIDTH		16
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -112,7 +113,6 @@ int line_two(int fd)
 
 int write_hostname(fd)
 {
-
 	char *p, hostname[MAXHOSTNAMELEN];
 
 	if (gethostname(hostname, sizeof(hostname)))
@@ -132,15 +132,19 @@ int write_hostname(fd)
 
 int write_time(fd)
 {
-
-	char *format, buf[1024];
+	int i;
+	char *format, buf[WIDTH+1];
 	time_t tval;
 
 	format = "%H:%M:%S %Z";
-/*	bzero(buf, sizeof(buf));*/
+	for(i=0;i<=WIDTH;i++) buf[i] = (int) 0x20;
 
 	if (time(&tval) == -1) err(1, "time");
 	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
+
+	write_hostname(fd);
+	write(fd, " Time:", 6);
+	line_two(fd);	
 	write(fd, buf, 12);
 
 	return(0);
@@ -148,15 +152,19 @@ int write_time(fd)
 
 int write_date(fd)
 {
-
-	char *format, buf[1024];
+	int i;
+	char *format, buf[WIDTH+1];
 	time_t tval;
 
 	format = "%a %b %e %Y";
-/*	bzero(buf, sizeof(buf));*/
+	for(i=0;i<=WIDTH;i++) buf[i] = (int) 0x20;
 
 	if (time(&tval) == -1) err(1, "time");
 	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
+
+	write_hostname(fd);
+	write(fd, " Date:", 6);
+	line_two(fd);	
 	write(fd, buf, 15);
 
 	return(0);
@@ -164,20 +172,25 @@ int write_date(fd)
 
 int write_load(fd)
 {
+	int i;
 	double loadav[3];
-	char *p, load[17];
+	char *p, load[WIDTH+1];
 
-	load[16] = (int) 0x20;
-	load[15] = (int) 0x20;
+	for(i=0;i<=WIDTH;i++) load[i] = (int) 0x20;
 
 	if (getloadavg(loadav, sizeof(loadav) / sizeof(loadav[0])) < 0)
 		err(1, "getloadavg");
 
-	snprintf(load, 17, "%.2f %.2f %.2f", loadav[0], loadav[1], loadav[2]);
+	snprintf(load, sizeof(load), "%.2f %.2f %.2f",
+		loadav[0], loadav[1], loadav[2]);
+
 	if ((p = strchr(load, '\0')))
 		*p = ' ';
 
-	write(fd, load, 16);
+	write_hostname(fd);
+	write(fd, " Load:", 6);
+	line_two(fd);	
+	write(fd, load, WIDTH);
 	
 	return(0);
 }
@@ -185,7 +198,7 @@ int write_load(fd)
 int write_uptime(fd)
 {
 	int mib[2];
-	char wtime[17];
+	char wtime[WIDTH+1];
 	time_t uptime, now;
 	int days, hrs, mins;
 	struct timeval  boottime;
@@ -207,8 +220,13 @@ int write_uptime(fd)
 	mins = uptime / SECSPERMIN;
 	uptime %= SECSPERMIN;
 
-	snprintf(wtime, 17, "%03dd %02dh %02dm %02ds",days, hrs, mins, uptime);
-	write(fd, wtime, 16);
+	snprintf(wtime, sizeof(wtime), "%03dd %02dh %02dm %02ds",
+		days, hrs, mins, uptime);
+
+	write_hostname(fd);
+	write(fd, " Uptime:", 8);
+	line_two(fd);	
+	write(fd, wtime, WIDTH);
 
 	return(0);
 }
@@ -233,6 +251,9 @@ int write_temp(fd)
 	snprintf(wtemp, 11, "%02.2f degC", 
 		(sensor.value - 273150000) / 1000000.0);
 
+	write_hostname(fd);
+	write(fd, " Temp:", 6);
+	line_two(fd);	
 	write(fd, wtemp, 10);
 
 	return(0);
@@ -283,41 +304,26 @@ main(int argc, char *argv[])
 	display_on(fd);
 
 	while (bail == 0) {
-		write_hostname(fd);
-		write(fd, " Time:", 6);
-		line_two(fd);	
 		write_time(fd);
 
 		if(bail) break;
 		sleep(wait);
 
-		write_hostname(fd);
-		write(fd, " Date:", 6);
-		line_two(fd);	
 		write_date(fd);
 
 		if(bail) break;
 		sleep(wait);
 
-		write_hostname(fd);
-		write(fd, " Uptime:", 8);
-		line_two(fd);	
 		write_uptime(fd);
 
 		if(bail) break;
 		sleep(wait);
 
-		write_hostname(fd);
-		write(fd, " Load:", 6);
-		line_two(fd);	
 		write_load(fd);
 
 		if(bail) break;
 		sleep(wait);
 
-		write_hostname(fd);
-		write(fd, " Temp:", 6);
-		line_two(fd);	
 		write_temp(fd);
 
 		if(rand()%21==13){
