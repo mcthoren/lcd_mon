@@ -197,12 +197,14 @@ int write_load(fd)
 
 int write_uptime(fd)
 {
-	int mib[2];
-	char wtime[WIDTH+1];
+	int i, mib[2];
+	char *p, wtime[WIDTH+1];
 	time_t uptime, now;
 	int days, hrs, mins;
 	struct timeval  boottime;
 	size_t size;
+
+	for(i=0;i<=WIDTH;i++) wtime[i] = (int) 0x20;
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_BOOTTIME;
@@ -222,6 +224,9 @@ int write_uptime(fd)
 
 	snprintf(wtime, sizeof(wtime), "%03dd %02dh %02dm %02ds",
 		days, hrs, mins, uptime);
+
+	if ((p = strchr(wtime, '\0')))
+		*p = ' ';
 
 	write_hostname(fd);
 	write(fd, " Uptime:", 8);
@@ -248,7 +253,7 @@ int write_temp(fd)
 	if (sysctl(mib, 5, &sensor, &size, NULL, 0) < 0)
 		err(1, "sysctl");
 
-	snprintf(wtemp, 11, "%02.2f degC", 
+	snprintf(wtemp, sizeof(wtemp), "%02.2f degC", 
 		(sensor.value - 273150000) / 1000000.0);
 
 	write_hostname(fd);
@@ -330,6 +335,7 @@ main(int argc, char *argv[])
 			sleep(wait);
 			clear_lcd(fd);
 			write(fd, "7th Angel cries:", 16);
+			line_two(fd);
 			write(fd, "   It is done!  ", 16);
 		}
 
