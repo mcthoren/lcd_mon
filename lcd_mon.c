@@ -283,7 +283,6 @@ main(int argc, char *argv[])
 	display_on(fd);
 
 	while (bail == 0) {
-		clear_lcd(fd);
 		write_hostname(fd);
 		write(fd, " Time:", 6);
 		line_two(fd);	
@@ -292,7 +291,6 @@ main(int argc, char *argv[])
 		if(bail) break;
 		sleep(wait);
 
-		clear_lcd(fd);
 		write_hostname(fd);
 		write(fd, " Date:", 6);
 		line_two(fd);	
@@ -301,7 +299,6 @@ main(int argc, char *argv[])
 		if(bail) break;
 		sleep(wait);
 
-		clear_lcd(fd);
 		write_hostname(fd);
 		write(fd, " Uptime:", 8);
 		line_two(fd);	
@@ -310,7 +307,6 @@ main(int argc, char *argv[])
 		if(bail) break;
 		sleep(wait);
 
-		clear_lcd(fd);
 		write_hostname(fd);
 		write(fd, " Load:", 6);
 		line_two(fd);	
@@ -319,7 +315,6 @@ main(int argc, char *argv[])
 		if(bail) break;
 		sleep(wait);
 
-		clear_lcd(fd);
 		write_hostname(fd);
 		write(fd, " Temp:", 6);
 		line_two(fd);	
