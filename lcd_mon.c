@@ -27,9 +27,6 @@
  * 
  */
 
-#define lcd_wait	100000
-#define	WIDTH		16
-
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/sensors.h>
@@ -48,16 +45,25 @@
 #include <tzfile.h>
 #include <unistd.h>
 
+#define lcd_wait	100000
+#define	WIDTH		16
+
 __dead void	usage(void);
 void		sigf(int);
 int		clear_lcd(int);
+int		display_on(int fd);
 int		set_backlight(int);
 int		line_two(int);
+int		write_hostname(int);
+int		write_time(int);
+int		write_date(int);
+int		write_load(int);
+int		write_uptime(int);
+int		write_temp(int);
 
 volatile sig_atomic_t bail = 0;
-char cmd_0 = (int)0xFE, cmd_1 = (int)0x7C, cmd_on = 0x0C, cmd_clear = 0x01;
-char cmd_bl = (int)157, cmd_l2 = (int)192;
-int wait=3;
+char cmd_0 = (int) 0xFE, cmd_1 = (int) 0x7C, cmd_on = (int) 0x0C, cmd_clear = (int) 0x01;
+char cmd_bl = (int) 157, cmd_l2 = (int) 192;
 
 __dead void
 usage(void)
@@ -111,7 +117,7 @@ int line_two(int fd)
 	return(0);
 }
 
-int write_hostname(fd)
+int write_hostname(int fd)
 {
 	char *p, hostname[MAXHOSTNAMELEN];
 
@@ -130,7 +136,7 @@ int write_hostname(fd)
 	return(0);
 }
 
-int write_time(fd)
+int write_time(int fd)
 {
 	int i;
 	char *format, buf[WIDTH+1];
@@ -150,7 +156,7 @@ int write_time(fd)
 	return(0);
 }
 
-int write_date(fd)
+int write_date(int fd)
 {
 	int i;
 	char *format, buf[WIDTH+1];
@@ -170,7 +176,7 @@ int write_date(fd)
 	return(0);
 }
 
-int write_load(fd)
+int write_load(int fd)
 {
 	int i;
 	double loadav[3];
@@ -195,7 +201,7 @@ int write_load(fd)
 	return(0);
 }
 
-int write_uptime(fd)
+int write_uptime(int fd)
 {
 	int i, mib[2];
 	char *p, wtime[WIDTH+1];
@@ -236,7 +242,7 @@ int write_uptime(fd)
 	return(0);
 }
 
-int write_temp(fd)
+int write_temp(int fd)
 {
 	int mib[5];
 	size_t size;
@@ -268,7 +274,7 @@ int write_temp(fd)
 int
 main(int argc, char *argv[])
 {
-	int fd;
+	int fd, wait=3;
 	char *dev, devicename[32];
 	struct termios port;
 /*	struct termios portsave; */
