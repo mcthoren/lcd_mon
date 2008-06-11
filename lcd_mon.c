@@ -274,13 +274,14 @@ int write_temp(int fd)
 int
 main(int argc, char *argv[])
 {
-	int fd, wait=3;
+	int fd;
+	uint wait=3;
 	char *dev, devicename[32];
 	struct termios port;
 /*	struct termios portsave; */
 
 	bzero(&port, sizeof(port));
-	srand(time(0));
+	srand((uint)time(0));
 
 	argc -= optind;
 	argv += optind;
