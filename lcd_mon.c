@@ -18,13 +18,19 @@
 
 /*
  * Much of this code is from OpenBSD programs and manpages. 
- * No really, like most of it is just copy paste from /usr/src/
  *
  * XXX This code depends on DTR being looped to DCD, cuz I haven't setup
  * the serial port corectly yet :x 
  *
  * XXX I'm not saving or restoring port settings yet either :x
- * 
+ */
+
+/*
+ * This code is meant to stream "useful" info to a little lcd panel
+ * external to the machine. I'm using a little serial driven lcd screen
+ * bolted onto a little usb uart breakout board. Links below:
+ * http://www.sparkfun.com/commerce/product_info.php?products_id=461
+ * http://www.sparkfun.com/commerce/product_info.php?products_id=718
  */
 
 #include <sys/ioctl.h>
