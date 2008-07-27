@@ -65,7 +65,7 @@ int		write_time(int);
 int		write_date(int);
 int		write_load(int);
 int		write_uptime(int);
-int		write_temp(int);
+int		write_temp(int, int, int);
 
 volatile sig_atomic_t bail = 0;
 char cmd_0 = (int) 0xFE, cmd_1 = (int) 0x7C, cmd_on = (int) 0x0C, cmd_clear = (int) 0x01;
@@ -234,7 +234,7 @@ int write_uptime(int fd)
 	mins = uptime / SECSPERMIN;
 	uptime %= SECSPERMIN;
 
-	snprintf(wtime, sizeof(wtime), "%dd %dh %dm %ds",
+	snprintf(wtime, sizeof(wtime), "%dd %02dh %02dm %02ds",
 		days, hrs, mins, uptime);
 
 	if ((p = strchr(wtime, '\0')))
@@ -248,18 +248,18 @@ int write_uptime(int fd)
 	return(0);
 }
 
-int write_temp(int fd)
+int write_temp(int fd, int fam, int sens)
 {
 	int mib[5];
 	size_t size;
-	char wtemp[11];
+	char wtemp[11], num[2];
 	struct sensor	sensor;
 
 	mib[0] = CTL_HW;
 	mib[1] = HW_SENSORS;
-	mib[2] = 0; /* 2,4 found by doing a ktrace of sysctl */
+	mib[2] = fam; /* 2,4 found by doing a ktrace of sysctl */
 	mib[3] = SENSOR_TEMP; 
-	mib[4] = 1; /* need to figure out how to do this properly */
+	mib[4] = sens; /* need to figure out how to do this properly */
 
 	size = sizeof(sensor);
 	if (sysctl(mib, 5, &sensor, &size, NULL, 0) < 0)
@@ -268,9 +268,13 @@ int write_temp(int fd)
 	snprintf(wtemp, sizeof(wtemp), "%02.2f degC", 
 		(sensor.value - 273150000) / 1000000.0);
 
+	 snprintf(num, sizeof(num), "%d", sens);
+
 	write_hostname(fd);
-	write(fd, " Temp:", 6);
-	line_two(fd);	
+	write(fd, " Temp", 5);
+	write(fd, num, 1);
+	write(fd, ":", 1);
+	line_two(fd);   
 	write(fd, wtemp, 10);
 
 	return(0);
@@ -342,7 +346,24 @@ main(int argc, char *argv[])
 		if(bail) break;
 		sleep(wait);
 
-		write_temp(fd);
+		write_temp(fd, 0, 0);
+
+		if(bail) break;
+		sleep(wait);
+
+		write_temp(fd, 0, 2);
+
+		if(bail) break;
+		sleep(wait);
+
+		write_temp(fd, 1, 0);
+
+/*
+		if(bail) break;
+		sleep(wait);
+
+		write_fan(fd, 1, 0);
+*/
 
 		if(rand()%21==13){
 			sleep(wait);
