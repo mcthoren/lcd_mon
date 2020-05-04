@@ -1,5 +1,3 @@
-/* $Header$ */
-
 /*
  * Copyright (c) 2008, 2020 Thoren McDole <thoren.mcdole@gmail.com>
  *
