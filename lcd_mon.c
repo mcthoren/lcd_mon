@@ -349,10 +349,12 @@ main(int argc, char *argv[])
 		if(bail) break;
 		sleep(wait);
 
+/*
 		write_temp(fd, 0, 2);
 
 		if(bail) break;
 		sleep(wait);
+*/
 
 		write_temp(fd, 1, 0);
 
