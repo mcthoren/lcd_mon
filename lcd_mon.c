@@ -363,14 +363,6 @@ main(int argc, char *argv[])
 		write_fan(fd, 1, 0);
 */
 
-		if(rand()%21==13){
-			sleep(wait);
-			clear_lcd(fd);
-			write(fd, "7th Angel cries:", 16);
-			line_two(fd);
-			write(fd, "   It is done!  ", 16);
-		}
-
 		if(bail) break;
 		sleep(wait);
 	}
