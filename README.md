@@ -5,5 +5,6 @@ To Do:
 - [ ] get old code compiling on a modern system w.o. warnings
 - [x] test with hardware
 - [x] makefile
-- [ ] fix 'lcd_mon: sysctl: No such file or directory'
+- [x] fix 'lcd_mon: sysctl: No such file or directory'
+- [ ] properly walk thru temps, and only display temps that exist.
 - [ ] write readme
