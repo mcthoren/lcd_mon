@@ -1,7 +1,7 @@
 /* $Header$ */
 
 /*
- * Copyright (c) 2008 Thoren McDole <thoren.mcdole@gmail.com>
+ * Copyright (c) 2008, 2020 Thoren McDole <thoren.mcdole@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
