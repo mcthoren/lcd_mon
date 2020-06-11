@@ -7,4 +7,5 @@ To Do:
 - [x] makefile
 - [x] fix 'lcd_mon: sysctl: No such file or directory'
 - [ ] properly walk thru temps, and only display temps that exist.
+- [ ] iterate thru a list of function pointers instead of explicitly calling funcs.
 - [ ] write readme
