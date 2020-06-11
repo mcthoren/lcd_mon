@@ -232,7 +232,7 @@ int write_uptime(int fd)
 	mins = uptime / SECSPERMIN;
 	uptime %= SECSPERMIN;
 
-	snprintf(wtime, sizeof(wtime), "%dd %02dh %02dm %02ds",
+	snprintf(wtime, sizeof(wtime), "%dd %02dh %02dm %02llds",
 		days, hrs, mins, uptime);
 
 	if ((p = strchr(wtime, '\0')))
