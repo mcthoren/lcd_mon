@@ -80,9 +80,10 @@ usage(void)
 
 /* ARGSUSED */
 void
-sigf(int useless)
+sigf(int sig)
 {
-	bail = 1;
+	if (sig == SIGTERM || sig == SIGINT)
+		bail = 1;
 }
 
 int clear_lcd(int fd)

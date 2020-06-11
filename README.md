@@ -2,7 +2,7 @@
 
 To Do:
 - [x] resurrect dusty old code from RCS
-- [ ] get old code compiling on a modern system w.o. warnings
+- [x] get old code compiling on a modern system w.o. warnings
 - [x] test with hardware
 - [x] makefile
 - [x] fix 'lcd_mon: sysctl: No such file or directory'
