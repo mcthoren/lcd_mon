@@ -66,8 +66,8 @@ int		write_uptime(int);
 int		write_temp(int, int, int);
 
 volatile sig_atomic_t bail = 0;
-char cmd_0 = (int) 0xFE, cmd_1 = (int) 0x7C, cmd_on = (int) 0x0C, cmd_clear = (int) 0x01;
-char cmd_bl = (int) 157, cmd_l2 = (int) 192;
+char cmd_0 =  0xfe, cmd_1 = 0x7c, cmd_on = 0x0c, cmd_clear = 0x01;
+char cmd_bl = 0x9d, cmd_l2 = 0xc0;
 
 __dead void
 usage(void)
