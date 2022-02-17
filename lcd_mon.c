@@ -35,7 +35,6 @@
 #include <sys/param.h>
 #include <sys/sensors.h>
 #include <sys/sysctl.h>
-#include <sys/sysctl.h>
 #include <sys/types.h>
 
 #include <err.h>
@@ -55,7 +54,7 @@
 __dead void	usage(void);
 void		sigf(int);
 int		clear_lcd(int);
-int		display_on(int fd);
+int		display_on(int);
 int		set_backlight(int);
 int		line_two(int);
 int		write_hostname(int);
@@ -267,7 +266,7 @@ int write_temp(int fd, int fam, int sens)
 	snprintf(wtemp, sizeof(wtemp), "%02.2f degC", 
 		(sensor.value - 273150000) / 1000000.0);
 
-	 snprintf(num, sizeof(num), "%d", sens);
+	snprintf(num, sizeof(num), "%d", sens);
 
 	write_hostname(fd);
 	write(fd, " Temp", 5);
@@ -279,15 +278,28 @@ int write_temp(int fd, int fam, int sens)
 	return(0);
 }
 
+int wtempa(int fd)
+{
+	// XXX hack wrapper func
+	return write_temp(fd, 0, 0);
+}
+
+int wtempb(int fd)
+{
+	// XXX hack wrapper func
+	return write_temp(fd, 4, 2);
+}
 
 int
 main(int argc, char *argv[])
 {
-	int fd;
+	int j, fd;
+	int wfp_len = 6;
 	uint wait=3;
 	char *dev, devicename[32];
 	struct termios port;
 /*	struct termios portsave; */
+	int (*write_fps[wfp_len]) (int fd);
 
 	bzero(&port, sizeof(port));
 	srand((uint)time(0));
@@ -320,54 +332,24 @@ main(int argc, char *argv[])
 	signal(SIGTERM, sigf);
 	signal(SIGHUP, SIG_IGN);
 
+	write_fps[0] = write_time;
+	write_fps[1] = write_date;
+	write_fps[2] = write_uptime;
+	write_fps[3] = write_load;
+	write_fps[4] = wtempa;
+	write_fps[5] = wtempb;
+
 	set_backlight(fd);
 	clear_lcd(fd);
 	display_on(fd);
 
-	while (bail == 0) {
-		write_time(fd);
-
-		if(bail) break;
-		sleep(wait);
-
-		write_date(fd);
-
-		if(bail) break;
-		sleep(wait);
-
-		write_uptime(fd);
-
-		if(bail) break;
-		sleep(wait);
-
-		write_load(fd);
-
-		if(bail) break;
-		sleep(wait);
-
-		write_temp(fd, 0, 0);
-
-		if(bail) break;
-		sleep(wait);
-
-/*
-		write_temp(fd, 0, 2);
-
-		if(bail) break;
-		sleep(wait);
-*/
-
-		write_temp(fd, 1, 0);
-
-/*
-		if(bail) break;
-		sleep(wait);
-
-		write_fan(fd, 1, 0);
-*/
-
-		if(bail) break;
-		sleep(wait);
+	while (1) {
+		for(j=0; j < wfp_len; j++){
+			(*write_fps[j])(fd);
+			if(bail) break;
+			sleep(wait);
+		}
+	if(bail) break;
 	}
 /*
 	if(tcsetattr(fd, TCSANOW, &portsave) < 0)
