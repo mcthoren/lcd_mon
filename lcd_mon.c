@@ -147,7 +147,7 @@ int write_time(int fd)
 	time_t tval;
 
 	format = "%H:%M:%S %Z";
-	for(i=0;i<=WIDTH;i++) buf[i] = (int) 0x20;
+	for(i = 0; i <= WIDTH; i++) buf[i] = (int) 0x20;
 
 	if (time(&tval) == -1) err(1, "time");
 	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
@@ -167,7 +167,7 @@ int write_date(int fd)
 	time_t tval;
 
 	format = "%a %b %e %Y";
-	for(i=0;i<=WIDTH;i++) buf[i] = (int) 0x20;
+	for(i = 0; i <= WIDTH; i++) buf[i] = (int) 0x20;
 
 	if (time(&tval) == -1) err(1, "time");
 	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
@@ -186,7 +186,7 @@ int write_load(int fd)
 	double loadav[3];
 	char *p, load[WIDTH+1];
 
-	for(i=0;i<=WIDTH;i++) load[i] = (int) 0x20;
+	for(i = 0; i <= WIDTH; i++) load[i] = (int) 0x20;
 
 	if (getloadavg(loadav, sizeof(loadav) / sizeof(loadav[0])) < 0)
 		err(1, "getloadavg");
@@ -214,7 +214,7 @@ int write_uptime(int fd)
 	struct timeval  boottime;
 	size_t size;
 
-	for(i=0;i<=WIDTH;i++) wtime[i] = (int) 0x20;
+	for(i = 0; i <= WIDTH; i++) wtime[i] = (int) 0x20;
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_BOOTTIME;
